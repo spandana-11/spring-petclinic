@@ -15,10 +15,8 @@ pipeline {
 
         stage('Build with Maven') {
             steps {
-                withMaven(maven: 'Maven') {
-                    sh 'mvn clean install'
-                }
-            }
+        sh "${MAVEN_HOME}/bin/mvn clean install"
+    }
         }
 
         stage('SonarQube Analysis') {
