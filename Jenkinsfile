@@ -1,49 +1,41 @@
 pipeline {
-  agent any
+    agent any
 
-  tools {
-    maven 'MAVEN3'       // Configure this in Jenkins → Global Tool Config
-    jdk 'JAVA17'         // Configure Java 17 here too
-  }
-
-  environment {
-    SONARQUBE = 'SonarQubeServer'   // Jenkins → Manage → Configure SonarQube
-  }
-
-  stages {
-    stage('Checkout') {
-      steps {
-        git 'https://github.com/spring-projects/spring-petclinic.git'
-      }
+    environment {
+        MAVEN_HOME = tool 'Maven' // Define Maven tool name as configured in Jenkins Global Tools
+        SONARQUBE = 'SonarQube'   // Name you give your SonarQube server in Jenkins > Configure
     }
 
-    stage('Build') {
-      steps {
-        sh 'mvn clean install'
-      }
-    }
-
-    stage('SonarQube Analysis') {
-      steps {
-        withSonarQubeEnv("${SONARQUBE}") {
-          sh 'mvn sonar:sonar'
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git 'https://github.com/spandana-11/spring-petclinic.git'
+            }
         }
-      }
-    }
 
-    stage('Quality Gate') {
-      steps {
-        timeout(time: 2, unit: 'MINUTES') {
-          waitForQualityGate abortPipeline: true
+        stage('Build with Maven') {
+            steps {
+                withMaven(maven: 'Maven') {
+                    sh 'mvn clean install'
+                }
+            }
         }
-      }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh 'mvn sonar:sonar -Dsonar.projectKey=petclinic -Dsonar.host.url=http://localhost:9000'
+                }
+            }
+        }
     }
 
-    stage('Notify') {
-      steps {
-        echo "Send email/slack here"
-        // mail to: 'you@example.com', subject: 'Build Finished', body: 'Success or failure'
-      }
+    post {
+        success {
+            echo "Pipeline completed successfully!"
+        }
+        failure {
+            echo "Pipeline failed!"
+        }
     }
-  }
 }
